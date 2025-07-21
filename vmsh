@@ -1,29 +1,14 @@
-#!/bin/bash -e
+#!/bin/bash
 
 [ ! -d /sys/firmware/efi ] && echo "System not booted in UEFI mode." && exit 1
 
-command -v qemu-system-x86_64 > /dev/null 2>&1 || { echo >&2 "I require qemu-system-x86_64 but it's not installed. Install it. Aborting."; exit 1; }
 command -v qemu-img > /dev/null 2>&1 || { echo >&2 "I require qemu-img but it's not installed. Install it. Aborting."; exit 1; }
-qemu-system-x86_64 -display sdl -version >/dev/null 2>&1 || { echo "I require qemu-ui-sdl or equivalent but it's not installed. Install it. Aborting."; exit 1; }
-
-AUDIO_DEVICE=""
-for dev in ich9-intel-hda intel-hda ac97 es1370; do
-  if qemu-system-x86_64 -device help 2>/dev/null | grep -qi "$dev"; then
-    AUDIO_DEVICE="$dev"
-    break
-  fi
-done
-
-if [ -z "$AUDIO_DEVICE" ]; then
-  echo "No supported audio device found (ich9-intel-hda, intel-hda, ac97, es1370). Audio disabled."
-  AUDIO_ARGS=""
-else
-  AUDIO_ARGS="-device $AUDIO_DEVICE -audiodev sdl,id=snd0"
-fi
+command -v qemu-system-x86_64 > /dev/null 2>&1 || { echo >&2 "I require qemu-system-x86 but it's not installed. Install it. Aborting."; exit 1; }
+qemu-system-x86_64 -display sdl,gl=on -version >/dev/null 2>&1 || { echo "I require qemu-ui-sdl qemu-ui-opengl but they're not installed. Install them. Aborting."; exit 1; }
 
 usage() {
   echo "Usage: $0 IMAGE"
-  echo "Example: $0 /path/to/image.{img,iso,qcow2}"
+  echo "Example: $0 /path/to/image.img|iso|qcow2"
   exit 1
 }
 
@@ -33,16 +18,23 @@ fi
 
 IMAGE="$1"
 
+
 if [[ "$IMAGE" == *".img" ]] && [[ -f "$IMAGE" ]]; then
-  qemu-system-x86_64 -m 2048 -smp 4 -cpu host -enable-kvm -net nic -net user $AUDIO_ARGS -display sdl,gl=on,window-close=on -hda "${IMAGE}" -bios /usr/share/ovmf/x64/OVMF.4m.fd
+  for dev in ich9-intel-hda intel-hda ac97 es1370; do
+    qemu-system-x86_64 -bios /usr/share/ovmf/x64/OVMF.4m.fd -m 2048 -smp 4 -cpu host -enable-kvm -net nic -net user -display sdl,gl=on,window-close=on -audiodev alsa,id=snd0 -device "$dev",audiodev=snd0 -hda "${IMAGE}" && break
+  done
 elif [[ "$IMAGE" == *".iso" ]] && [[ -f "$IMAGE" ]]; then
   read -p "Enter name for image file (e.g. Arch): " IMAGE_NAME
   read -p "Enter disk size (default: 20G): " DISK && [ ! "$DISK" ] && DISK="20G"
   mkdir -p ./data
   qemu-img create -f qcow2 "./data/${IMAGE_NAME}.img" "$DISK"
-  qemu-system-x86_64 -boot d -cdrom "${IMAGE}" -m 2048 -smp 4 -cpu host -enable-kvm -net nic -net user $AUDIO_ARGS -display sdl,gl=on,window-close=on -hda "./data/${IMAGE_NAME}.img" -bios /usr/share/ovmf/x64/OVMF.4m.fd
+  for dev in ich9-intel-hda intel-hda ac97 es1370; do
+    qemu-system-x86_64 -boot d -cdrom "${IMAGE}" -bios /usr/share/ovmf/x64/OVMF.4m.fd -m 2048 -smp 4 -cpu host -enable-kvm -net nic -net user -display sdl,gl=on,window-close=on -audiodev alsa,id=snd0 -device "$dev",audiodev=snd0 -hda "./data/${IMAGE_NAME}.img" && break
+  done
 elif [[ "$IMAGE" == *".qcow2" ]] && [[ -f "$IMAGE" ]]; then
-  qemu-system-x86_64 -m 2048 -smp 4 -cpu host -enable-kvm -net nic -net user $AUDIO_ARGS -display sdl,gl=on,window-close=on -hda "${IMAGE}"
+  for dev in ich9-intel-hda intel-hda ac97 es1370; do
+    qemu-system-x86_64 -bios /usr/share/ovmf/x64/OVMF.4m.fd -m 2048 -smp 4 -cpu host -enable-kvm -net nic -net user -display sdl,gl=on,window-close=on -audiodev alsa,id=snd0 -device "$dev",audiodev=snd0 -hda "${IMAGE}" && break
+  done
 else
   usage
 fi
