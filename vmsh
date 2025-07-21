@@ -4,9 +4,8 @@
 
 command -v qemu-system-x86_64 > /dev/null 2>&1 || { echo >&2 "I require qemu-system-x86_64 but it's not installed. Install it. Aborting."; exit 1; }
 command -v qemu-img > /dev/null 2>&1 || { echo >&2 "I require qemu-img but it's not installed. Install it. Aborting."; exit 1; }
-qemu-system-x86_64 -display sdl -version >/dev/null 2>&1 || { echo "I require qemu-ui-sdl but it's not installed. Install it. Aborting."; exit 1; }
+qemu-system-x86_64 -display sdl -version >/dev/null 2>&1 || { echo "I require qemu-ui-sdl and qemu-ui-opengl but it's not installed. Install it. Aborting."; exit 1; }
 qemu-system-x86_64 -device help 2>/dev/null | grep -qi 'ich9-intel-hda' || { echo "I require audio device ich9-intel-hda missing. Install qemu-audio-sdl or equivalent. Aborting."; exit 1; }
-qemu-system-x86_64 -display gtk,gl=on -version >/dev/null 2>&1 || { echo "I require qemu-ui-gtk with OpenGL support but it's not installed. Install it. Aborting."; exit 1; }
 
 usage() {
   echo "Usage: $0 IMAGE"
