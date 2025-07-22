@@ -3,9 +3,7 @@
 [ ! -d /sys/firmware/efi ] && echo "System not booted in UEFI mode." && exit 1
 
 command -v qemu-img > /dev/null 2>&1 || { echo >&2 "I require qemu-img but it's not installed. Install it. Aborting."; exit 1; }
-command -v qemu-system-x86_64 > /dev/null 2>&1 || { echo >&2 "I require qemu-system-x86 but it's not installed. Install it. Aborting."; exit 1; }
-qemu-system-x86_64 -audiodev alsa,id=snd0 -version >/dev/null 2>&1 || { echo >&2 "I require qemu-audio-alsa but it's not installed. Install it. Aborting."; exit 1; }
-qemu-system-x86_64 -display sdl,gl=on -version >/dev/null 2>&1 || { echo >&2 "I require qemu-ui-sdl qemu-ui-opengl but they're not installed. Install them. Aborting."; exit 1; }
+command -v qemu-system-x86_64 > /dev/null 2>&1 || { echo >&2 "I require qemu-system-x86 qemu-audio-alsa qemu-ui-opengl qemu-ui-sdl but they're not installed. Install them. Aborting."; exit 1; }
 
 usage() {
   echo "Usage: $0 IMAGE"
